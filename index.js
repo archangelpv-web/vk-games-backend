@@ -6,12 +6,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Railway сам создаст DATABASE_URL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
 });
 
-// --- init tables ---
+// --- init DB ---
 async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS games (
@@ -43,10 +43,12 @@ app.get("/games", async (req, res) => {
 
 app.post("/games", async (req, res) => {
   const { title, description, image } = req.body;
+
   const result = await pool.query(
     "INSERT INTO games (title, description, image) VALUES ($1,$2,$3) RETURNING *",
     [title, description, image]
   );
+
   res.json(result.rows[0]);
 });
 
@@ -79,4 +81,6 @@ app.get("/registrations", async (req, res) => {
   res.json(result.rows);
 });
 
-app.listen(3000, () => console.log("Server started"));
+// Railway требует порт из env
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Server started"));
